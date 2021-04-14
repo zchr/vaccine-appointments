@@ -1,0 +1,20 @@
+{
+    "name": "Vaccine Appointment Notifier",
+    "description": "Airtable + Python + Cron to subscribe to vaccine appointments in your zip codes",
+    "repository": "https://github.com/zchr/vaccine-appointments",
+    "keywords": ["python"],
+    "env": {
+        "AIRTABLE_API_KEY": {
+            "description": "API key from your Airtable account",
+            "value": "airtableapikey"
+        },
+        "VACCINE_MAX_MILES": {
+          "description": "Max number of miles you want to consider from each zip code you're tracking",
+          "value": "40"
+        },
+        "VACCINE_MAX_MINUTES": {
+          "description": "Max number of minutes before you'll consider appointment information out-dated",
+          "value": "5"
+        }
+      }
+  }
