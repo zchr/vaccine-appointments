@@ -1,55 +1,14 @@
-from bs4 import BeautifulSoup as bs
 from datetime import datetime
 from decouple import config
+from fetch import get_rows
 import requests, json, time
 
 AIRTABLE_API_KEY = config('AIRTABLE_API_KEY')
-MAX_MILES = int(config('VACCINE_MAX_MILES'))
-MAX_MINUTES = int(config('VACCINE_MAX_MINUTES'))
 
 headers = {
     'Authorization': f'Bearer {AIRTABLE_API_KEY}',
     'Content-Type': 'application/json',
 }
-
-def get_page(zip):
-    url = f'https://www.getmyvaccine.org/zips/{zip}?sort=distance'
-    req = requests.get(url)
-    return bs(req.text, features='html.parser')
-
-def get_rows(page):
-    rows = []
-    for row in page.select('div[class*="Row__SlotRow-"]'):
-        try:
-            distance = row.select('div[class*="Row__Distance-"]')[0].div.text
-            distance_miles = float(distance.replace(' miles', ''))
-            address = row.select('h4[class*="Row__SlotTitle-"]')[0].contents[1].text 
-            active = row.select('div[class*="Row__Ago-"]')[0].div.text
-            book_node = row.select('div[class*="Row__Book-"]')[0]
-            book_href = book_node.a.get('href')
-            source = book_node.div.text
-            unique_id = f'{source} {address} {distance_miles}'.lower()
-            rows.append({
-                'unique_id': unique_id,
-                'address': address,
-                'active': active,
-                'distance_miles': distance_miles,
-                'book_href': book_href,
-                'source': source
-            })
-        except Exception as e:
-            print('Unable to parse row')
-    return rows
-
-def is_active(time_str, max_minutes):
-    if time_str == 'a few seconds ago':
-        return True
-    if 'minutes ago' in time_str and int(time_str.replace(' minutes ago', '')) <= max_minutes:
-        return True
-    return False
-
-def filter_rows(rows):
-    return [r for r in rows if r['distance_miles'] <= MAX_MILES and is_active(r['active'], MAX_MINUTES)]
 
 def fetch_zips():
     req = requests.get('https://api.airtable.com/v0/appRsYQLVLVLkfRJ3/Zips?view=Grid%20view', headers=headers)
@@ -83,7 +42,7 @@ def save_rows(zip, rows, existing):
         headers=headers, 
         data=data,
         params=[('filterByFormula', f'Zip = {zip}')])
-    
+   
     # get existing records to update
     updates = []
     for unique_id in existing_unique_ids:
@@ -122,17 +81,13 @@ def save_summary(rows_edited):
     }])
     
     requests.post('https://api.airtable.com/v0/appRsYQLVLVLkfRJ3/Summary', headers=headers, data=data)
-        
 
 if __name__ == '__main__':
     zips = fetch_zips()
     rows_edited = 0
 
     for zip in zips:
-        page = get_page(zip)
-        rows = get_rows(page)
-
-        relevant_rows = filter_rows(rows)
+        relevant_rows = get_rows(zip)
         existing = fetch_rows()
 
         print(f'Found {len(relevant_rows)} records for {zip}')    
@@ -144,5 +99,4 @@ if __name__ == '__main__':
     if rows_edited > 0:
         print('Rows updated. Triggering summary...')
         save_summary(rows_edited)
-    
 
