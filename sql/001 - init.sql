@@ -1,6 +1,7 @@
 CREATE TABLE zip_codes (
      id SERIAL
     ,zip_code VARCHAR(5)
+    ,PRIMARY KEY(id)
 );
 
 CREATE TABLE distances (
@@ -12,5 +13,6 @@ CREATE TABLE distances (
     ,link TEXT
     ,source TEXT
     ,date_updated TIMESTAMP
+    ,PRIMARY KEY(id)
     ,CONSTRAINT uq_distances_place_id UNIQUE (place_id)
 );
