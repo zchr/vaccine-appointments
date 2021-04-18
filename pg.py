@@ -6,11 +6,7 @@ from twilio.rest import Client
 TWILIO_SID = config('TWILIO_SID')
 TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN')
 
-conn = psycopg2.connect(
-    host="localhost",
-    database="vaccines",
-    user="postgres",
-    password="")
+conn = psycopg2.connect(config('DATABASE_URL'))
 
 def send_text(phone, message):
     client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
